@@ -25,7 +25,7 @@
 
 贯穿全文，我们会反复用一个真实的需求：**"过夜在 Now in Android 里实现一个真实功能——白天拆好目标、组织好上下文、设计好验证，晚上让 AI 把它实现成高质量产出，让 CI 稳定变绿。"**
 
-> **一个关于案例的诚实说明**：Now in Android（[`android/nowinandroid`](https://github.com/android/nowinandroid)）是 Google 官方开源的旗舰 Android 示例应用——一个真实的、用 Kotlin + Compose 写成的新闻 App，2 万 + 星，有完整的模块结构、测试和 CI。它不是一个虚构例子，**你随时可以克隆下来、跑起来、照着做**。我们用它的真实模块名（`:feature:foryou:impl`、`:core:data` 等）、真实测试命令（`./gradlew testDemoDebug`）来演示。换成你公司自己的项目，就是换模块名和命令——原理完全一样。
+> **一个关于案例的诚实说明**：Now in Android（[`android/nowinandroid`](https://github.com/android/nowinandroid)）是 Google 官方开源的旗舰 Android 示例应用——一个真实的、用 Kotlin + Compose 写成的新闻 App，2 万 + 星，有完整的模块结构、测试和 CI。它不是一个虚构例子，**你随时可以克隆下来、跑起来、照着做**。我们用它的真实模块名（`:feature:foryou:impl`、`:core:data` 等）、真实测试命令（`./gradlew testDemoDebugUnitTest`）来演示。换成你公司自己的项目，就是换模块名和命令——原理完全一样。
 
 ---
 
@@ -185,13 +185,13 @@ OpenAI 自己在讲超级智能对齐的文章里也承认：**不能依赖一�
 对比一下两句话：
 
 - ❌ **"在 For You 首页加一个收藏状态角标"** ——"加一个角标"是什么？模型会"觉得"自己加了。你早上没法验证。
-- ✅ **"运行 `./gradlew :feature:foryou:impl:testDemoDebug`，退出码为 0，并且新增的 `ForYouCardTest` 覆盖'已收藏、未收藏、点击切换'三种情况全部通过"** ——"完成"有了机器可验证的定义。模型想撒谎？它得先让退出码真的变成 0。
+- ✅ **"运行 `./gradlew :feature:foryou:impl:testDemoDebugUnitTest`，退出码为 0，并且新增的 `ForYouCardTest` 覆盖'已收藏、未收藏、点击切换'三种情况全部通过"** ——"完成"有了机器可验证的定义。模型想撒谎？它得先让退出码真的变成 0。
 
 OpenAI 的官方 cookbook 里有一段话，几乎就是给这个维度的注脚：**"一个 goal 不应该因为模型'大概觉得自己做完了'就被标记为完成；它只应该在对照相关文件、测试、日志、基准输出或其它具体证据核验之后才被标记为完成。"** 用大白话说：**"验证进展，而不是复述进展。"**
 
 回到贯穿案例，终点的写法就是：
 
-> **完成标准：`./gradlew :feature:foryou:impl:testDemoDebug` 退出码 0，新增的 `ForYouCardTest` 覆盖三种情况全部通过，且不引入新的失败测试。验证动作：跑 `./gradlew :feature:foryou:impl:testDemoDebug` 并把退出码写进对话。**
+> **完成标准：`./gradlew :feature:foryou:impl:testDemoDebugUnitTest` 退出码 0，新增的 `ForYouCardTest` 覆盖三种情况全部通过，且不引入新的失败测试。验证动作：跑 `./gradlew :feature:foryou:impl:testDemoDebugUnitTest` 并把退出码写进对话。**
 
 这里有个关键细节：**验证动作必须写进目标，而且要把结果写进对话。** 为什么？因为很多 goal 的评估器（比如 Claude Code 的评估器）**只看对话记录，不读文件、不调工具**。如果你只写"确保测试通过"，AI 可能确实跑了测试，但没把结果写出来，评估器看不到证据，只能猜——这一猜，就可能判"未完成"或干脆"假完成"。所以你的目标要让 AI **把验证动作跑出来、把结果写进对话**。目标写给评估器看，不是写给干活模型看。
 
@@ -483,11 +483,11 @@ OpenAI 的官方 cookbook 里有一段话，几乎就是给这个维度的注脚
 **Android / Kotlin 主案例**（在 Now in Android 的 For You 首页加收藏状态角标）：
 
 > **目标：在 `:feature:foryou:impl` 模块的 For You 首页新闻卡片上，加一个"已收藏"状态角标，支持点击切换，让 CI 稳定变绿。**
-> **完成标准：`./gradlew :feature:foryou:impl:testDemoDebug` 退出码 0；新增的 `ForYouCardTest` 覆盖"已收藏、未收藏、点击切换"三种情况全部通过；`./gradlew :app:assembleDebug` 通过。**
-> **验证动作：跑 `./gradlew :feature:foryou:impl:testDemoDebug`，把退出码和测试结果写进对话；跑 `./gradlew :app:assembleDebug` 确认可编译。**
+> **完成标准：`./gradlew :feature:foryou:impl:testDemoDebugUnitTest` 退出码 0；新增的 `ForYouCardTest` 覆盖"已收藏、未收藏、点击切换"三种情况全部通过；`./gradlew :app:assembleDebug` 通过。**
+> **验证动作：跑 `./gradlew :feature:foryou:impl:testDemoDebugUnitTest`，把退出码和测试结果写进对话；跑 `./gradlew :app:assembleDebug` 确认可编译。**
 > **约束：只改 `:feature:foryou:impl` 模块下的 For You 相关文件和新增的 `ForYouCardTest.kt`；不碰 `:core:network`、`:core:database`；不 push main。**
 > **预算：最多 25 轮；每轮更新 `PROGRESS.md`；3 轮无进展则停止并报告阻塞。**
-> **反馈：每完成一步实现，跑 `./gradlew :feature:foryou:impl:testDemoDebug` 记录结果；改动先在本地分支提交。**
+> **反馈：每完成一步实现，跑 `./gradlew :feature:foryou:impl:testDemoDebugUnitTest` 记录结果；改动先在本地分支提交。**
 
 **Node.js 对照案例**（同一个思路，换个栈）：
 
@@ -497,7 +497,9 @@ OpenAI 的官方 cookbook 里有一段话，几乎就是给这个维度的注脚
 > **约束：只改 `articleService.ts`、文章路由，新增 `articleService.test.ts`；不碰 `infra/`、不 push main。**
 > **预算：最多 20 轮；每轮更新 `PROGRESS.md`；3 轮无进展则停止并报告阻塞。**
 
-**看出规律了吗？** 五个段落的**逻辑结构**一模一样（终点/验证/边界/预算/反馈），变的只是"命令"（`./gradlew :feature:foryou:impl:testDemoDebug` vs `npm test`）和"路径"（`.kt` vs `.ts`）。这就是为什么前面几章讲的是"原理"而不是"某个工具的教程"——**原理通用，命令随栈变**。下面六步，我用 Android 案例讲"怎么写"，但每一步都告诉你 Node 栈对应的写法。
+**看出规律了吗？** 五个段落的**逻辑结构**一模一样（终点/验证/边界/预算/反馈），变的只是"命令"（`./gradlew :feature:foryou:impl:testDemoDebugUnitTest` vs `npm test`）和"路径"（`.kt` vs `.ts`）。这就是为什么前面几章讲的是"原理"而不是"某个工具的教程"——**原理通用，命令随栈变**。下面六步，我用 Android 案例讲"怎么写"，但每一步都告诉你 Node 栈对应的写法。
+
+> **一个必须说清的实证边界**：上面这个"加收藏角标"的 goal，是我用来演示"怎么写"的**示例**——它的格式、命令（`testDemoDebugUnitTest`）、模块（`:feature:foryou:impl`）都是 Now in Android 里**真实存在**的，但我**并没有真的让 agent 实现这个角标功能**（那是个较大的工程，涉及 Hilt 注入、Repository、状态流）。我在这个项目上**真正实证跑通的**，是下一节那个更小的任务——给 `:core:common` 补一个测试。**别把示例当成实证**；要验证"角标功能能跑通"，你得自己 clone 了跑。这篇真正实证的是"agent 补测试 + 测试变绿"这条最小闭环，它在下一节有真实的运行记录。
 
 ### 第一步：写"终点"——什么叫做完？
 
@@ -513,9 +515,9 @@ OpenAI 的官方 cookbook 里有一段话，几乎就是给这个维度的注脚
 
 | 坏写法 | 为什么坏 | 好写法 |
 |---|---|---|
-| "把收藏角标做出来" | "做出来"无法机器验证，模型会"觉得"自己实现了 | "`./gradlew :feature:foryou:impl:testDemoDebug` 退出码 0，新增 `ForYouCardTest` 覆盖三种情况" |
-| "让 CI 变绿" | 没说"绿"的标准，评估器看不清 | "`./gradlew :feature:foryou:impl:testDemoDebug` 退出码 0，`ForYouCardTest` 覆盖'已收藏、未收藏、点击切换'三种情况全部通过" |
-| "角标应该能用" | "应该"是愿望，不是标准 | "不引入新的失败测试（对比实现前后 `./gradlew :feature:foryou:impl:testDemoDebug` 的失败列表）" |
+| "把收藏角标做出来" | "做出来"无法机器验证，模型会"觉得"自己实现了 | "`./gradlew :feature:foryou:impl:testDemoDebugUnitTest` 退出码 0，新增 `ForYouCardTest` 覆盖三种情况" |
+| "让 CI 变绿" | 没说"绿"的标准，评估器看不清 | "`./gradlew :feature:foryou:impl:testDemoDebugUnitTest` 退出码 0，`ForYouCardTest` 覆盖'已收藏、未收藏、点击切换'三种情况全部通过" |
+| "角标应该能用" | "应该"是愿望，不是标准 | "不引入新的失败测试（对比实现前后 `./gradlew :feature:foryou:impl:testDemoDebugUnitTest` 的失败列表）" |
 
 **Node 栈对应**：把 `./gradlew :app:testDebugUnitTest` 换成 `npm test`，路径从 `.kt` 换成 `.ts`，其余完全一样。**唯一要记住的是：找到你项目"真正验证它做对了"的那条命令**——Android 可能还要加 `./gradlew :app:lint` 或 instrumented test（后面场景会讲），Node 可能加 `npm run lint`。
 
@@ -597,8 +599,8 @@ OpenAI 的官方 cookbook 里有一段话，几乎就是给这个维度的注脚
 
 | 你的念头 | 要问自己的问题 | 写出来 |
 |---|---|---|
-| "我要实现它" | 什么算实现对了？用什么命令验证？ | **终点**：`./gradlew :feature:foryou:impl:testDemoDebug` 退出码 0，`ForYouCardTest` 三种情况通过 |
-| "我要证明它实现了" | 让 AI 跑什么动作、留什么证据？ | **显式检查**：跑 `./gradlew :feature:foryou:impl:testDemoDebug`，把退出码写进对话 |
+| "我要实现它" | 什么算实现对了？用什么命令验证？ | **终点**：`./gradlew :feature:foryou:impl:testDemoDebugUnitTest` 退出码 0，`ForYouCardTest` 三种情况通过 |
+| "我要证明它实现了" | 让 AI 跑什么动作、留什么证据？ | **显式检查**：跑 `./gradlew :feature:foryou:impl:testDemoDebugUnitTest`，把退出码写进对话 |
 | "它别乱动" | 它最容易顺手改哪几样？ | **边界**：只改 `:feature:foryou:impl` 模块，不碰 `:core:network`，不 push main |
 | "它别烧钱" | 最多跑几轮？卡住了怎么办？ | **预算**：最多 25 轮，3 轮无进展就停 |
 | "它跑偏了我得知道" | 中途出问题我怎么发现？ | **反馈**：每轮留日志，git 提交做检查点 |
@@ -620,11 +622,11 @@ OpenAI 的官方 cookbook 里有一段话，几乎就是给这个维度的注脚
 **需求 A（低复杂度 · 约 1-2 小时）· 给 For You 首页加收藏角标**
 
 > **目标：在 `:feature:foryou:impl` 模块的 For You 首页新闻卡片上，加一个"已收藏"状态角标，支持点击切换。**
-> **完成标准：`./gradlew :feature:foryou:impl:testDemoDebug` 退出码 0；新增的 `ForYouCardTest` 覆盖"已收藏、未收藏、点击切换"三种情况全部通过；`./gradlew :app:assembleDebug` 通过。**
-> **验证动作：跑 `./gradlew :feature:foryou:impl:testDemoDebug`，把退出码和测试结果写进对话；跑 `./gradlew :app:assembleDebug` 确认可编译。**
+> **完成标准：`./gradlew :feature:foryou:impl:testDemoDebugUnitTest` 退出码 0；新增的 `ForYouCardTest` 覆盖"已收藏、未收藏、点击切换"三种情况全部通过；`./gradlew :app:assembleDebug` 通过。**
+> **验证动作：跑 `./gradlew :feature:foryou:impl:testDemoDebugUnitTest`，把退出码和测试结果写进对话；跑 `./gradlew :app:assembleDebug` 确认可编译。**
 > **约束：只改 `:feature:foryou:impl` 模块下的 For You 相关文件和新增的 `ForYouCardTest.kt`；不碰 `:core:network`、`:core:database`；不 push main。**
 > **预算：最多 25 轮；每轮更新 `PROGRESS.md`；3 轮无进展则停止并报告。**
-> **反馈：每完成一步实现，跑 `./gradlew :feature:foryou:impl:testDemoDebug` 记录结果；改动先在本地分支提交。**
+> **反馈：每完成一步实现，跑 `./gradlew :feature:foryou:impl:testDemoDebugUnitTest` 记录结果；改动先在本地分支提交。**
 
 **为什么这么写：** 这是个低复杂度的需求，你白天已经想清楚了"角标怎么显示、点击怎么切换、三种状态怎么处理"。晚上 AI 实现时，你给它明确的终点（三种情况测试通过）、边界（只动 `:feature:foryou:impl`）、预算和反馈。**注意：这是"实现一个新功能"的编码，不是补测试——测试是你白天设计的验证手段，AI 实现时把它们写出来并跑通。**
 
@@ -633,11 +635,11 @@ OpenAI 的官方 cookbook 里有一段话，几乎就是给这个维度的注脚
 **需求 B（中复杂度 · 约 3-4 小时）· 给书签页加"清空已读"**
 
 > **目标：在 `:feature:bookmarks:impl` 模块的书签页，加一个"清空已读"操作——把已读的书签标记为移除，支持一键清空。**
-> **完成标准：`./gradlew :feature:bookmarks:impl:testDemoDebug` 退出码 0；新增 `BookmarksClearReadTest` 覆盖"无已读、清空已读、清空后为空"三种情况；`./gradlew :app:lintProdRelease` 无新增 error。**
-> **验证动作：跑 `./gradlew :feature:bookmarks:impl:testDemoDebug`，把退出码和测试结果写进对话；跑 `./gradlew :app:lintProdRelease` 报告结果。**
+> **完成标准：`./gradlew :feature:bookmarks:impl:testDemoDebugUnitTest` 退出码 0；新增 `BookmarksClearReadTest` 覆盖"无已读、清空已读、清空后为空"三种情况；`./gradlew :app:lintProdRelease` 无新增 error。**
+> **验证动作：跑 `./gradlew :feature:bookmarks:impl:testDemoDebugUnitTest`，把退出码和测试结果写进对话；跑 `./gradlew :app:lintProdRelease` 报告结果。**
 > **约束：只改 `:feature:bookmarks:impl` 模块下的相关文件和新增测试；不碰 `:core:data` 的存储逻辑、不碰 `:core:network`；不 push main；不要用全局状态（要状态驱动）。**
 > **预算：最多 35 轮；每轮更新 `PROGRESS.md`；连续 4 轮无进展则停止并报告。**
-> **反馈：每完成一步实现，跑 `./gradlew :feature:bookmarks:impl:testDemoDebug` 记录结果；改动先在本地分支提交。**
+> **反馈：每完成一步实现，跑 `./gradlew :feature:bookmarks:impl:testDemoDebugUnitTest` 记录结果；改动先在本地分支提交。**
 
 **为什么这么写：** 这是个有状态逻辑的中等需求——"清空已读"涉及列表状态、过滤、空态显示。你白天设计好了"已读/未读状态怎么维护、怎么验证（清空后为空）"，晚上 AI 按这个实现。"不要用全局状态"是你白天就想清楚的技术约束，写进去防止 AI 用偷懒的 hack。**这仍是需求的编码实现，只是实现里带着你设计的验证。**
 
@@ -646,11 +648,11 @@ OpenAI 的官方 cookbook 里有一段话，几乎就是给这个维度的注脚
 **需求 C（较高复杂度 · 可贯穿整晚）· 给 `:core:data` 仓库加测试**
 
 > **目标：给 `:core:data` 模块的 `OfflineFirstNewsRepository` 补一组真实测试，覆盖"离线时返回缓存、在线时拉取网络并更新缓存、网络失败时回退缓存"三种情况。**
-> **完成标准：`./gradlew :core:data:testDemoDebug` 退出码 0；新增 `OfflineFirstNewsRepositoryTest` 覆盖三种情况全部通过；不删改现有测试。**
-> **验证动作：跑 `./gradlew :core:data:testDemoDebug`，把退出码和测试结果写进对话。**
+> **完成标准：`./gradlew :core:data:testDemoDebugUnitTest` 退出码 0；新增 `OfflineFirstNewsRepositoryTest` 覆盖三种情况全部通过；不删改现有测试。**
+> **验证动作：跑 `./gradlew :core:data:testDemoDebugUnitTest`，把退出码和测试结果写进对话。**
 > **约束：只新增测试文件到 `:core:data` 的 test 目录（可参考 `:core:data-test` 已有的 `Test` 实现）；不改 `OfflineFirstNewsRepository` 的实现代码；不 push main。**
 > **预算：最多 60 轮；每轮更新 `PROGRESS.md`；连续 5 轮无进展则停止并报告。**
-> **反馈：每完成一个测试用例，跑 `./gradlew :core:data:testDemoDebug` 记录结果；改动先在本地分支提交。**
+> **反馈：每完成一个测试用例，跑 `./gradlew :core:data:testDemoDebugUnitTest` 记录结果；改动先在本地分支提交。**
 
 **为什么这么写：** 这是个测试补全需求，复杂度高、最需要理解现有代码结构。你白天设计好了"三种离线/在线/失败场景怎么验证"（参考 NIA 现有的 `Test` 实现），晚上 AI 按这个写测试。"不改实现代码"是这次任务的生命线——因为目标是"用测试把行为钉住"，不是改实现。"每完成一个用例提交一次"让这个任务可以分阶段推进数小时、且每步可回滚。
 
@@ -663,6 +665,69 @@ OpenAI 的官方 cookbook 里有一段话，几乎就是给这个维度的注脚
 3. **风险分层**——A 低风险放心开，B 中风险给足边界，C 较高风险（补测试涉及理解现有代码）留足回滚点。**你白天思考时，就已经按风险给每个需求定了不同的处理方式。**
 
 **（对照 · Node 栈的同一个需求 A）**：给 For You 首页加收藏角标，Node 项目就是给文章列表组件加一个"已收藏"状态 + 点击切换 + 单元测试，终点换成"`npm test` 退出码 0 + 组件测试三情况通过"，其余完全一样。**结构不变，命令随栈变。**
+
+---
+
+### 实证：这个流程，我真的跑通过一次
+
+上面讲了这么多"怎么写 goal"，你可能还是将信将疑：**这套流程真的能跑通吗？** 这一节给你看真实证据——我在写这篇文章时，真的把 Now in Android 克隆下来，跑了一遍"白天设计 → agent 执行 → 测试验证"的最小闭环。下面是我真实的运行记录，不是我编的。
+
+**第一步：克隆真实的项目。**
+```bash
+git clone --depth 1 https://github.com/android/nowinandroid.git
+```
+
+**第二步：验证构建链路能跑通**（JDK 17 + Android SDK，实测满足要求）。
+```bash
+JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 ANDROID_HOME=/home/peter/Android/Sdk ./gradlew :core:model:test
+# BUILD SUCCESSFUL in 15s
+```
+
+**第三步：验证一个真实有测试的模块**（`ForYouViewModelTest` 是 NIA 里真实存在的测试类）。
+```bash
+./gradlew :feature:foryou:impl:testDemoDebugUnitTest
+# ForYouViewModelTest：12 个测试全部通过
+# ForYouScreenScreenshotTests：1 个失败（原因见下）
+```
+
+**这里出现了一个真实、有价值的坑**：`ForYouScreenScreenshotTests`（Roborazzi 截图测试）在无显示环境失败了，报 `java.lang.UnsupportedOperationException`。**这不是测试写得差，是截图测试需要图形渲染环境，CI 无头环境跑不了。** 这恰恰印证了前面讲的"残余信任缺口"——**不是所有测试都能自动可靠地跑，你得知道哪些能跑、哪些不能，以及为什么。** 如果你只是"相信 CI 变绿就万事大吉"，你会被这种环境依赖的测试坑到。
+
+**第四步：让 agent 真实执行一个编码任务，并让测试真实验证通过。**
+我给了 agent 一个真实任务：给 `:core:common` 模块的 `asResult()` 补一个 Success 分支的测试（因为现有测试只覆盖了 error 分支）。agent 读了源码，新增了测试：
+
+```kotlin
+@Test
+fun Result_emits_success_and_completes() = runTest {
+    flow {
+        emit(1)
+    }
+        .asResult()
+        .test {
+            assertEquals(Result.Loading, awaitItem())
+            assertEquals(Result.Success(1), awaitItem())
+            awaitComplete()
+        }
+}
+```
+
+然后真实运行测试验证：
+
+```bash
+./gradlew :core:common:test
+# BUILD SUCCESSFUL in 5s
+# 测试报告：tests=2, failures=0, errors=0
+# （原有 error 分支测试 + 新增 Success 分支测试，全部通过）
+```
+
+我用 `git diff` 和测试报告 XML 双重确认了 agent 确实改了文件、测试确实跑绿了——不是它嘴上说"我改好了"。
+
+**这个实证告诉你三件事：**
+
+1. **流程是真实的**——"白天设计目标 → agent 执行 → 测试验证"不是纸面设想，是我真跑通的。
+2. **命令是真实的**——`./gradlew :core:common:test`、`:feature:foryou:impl:testDemoDebugUnitTest` 都是 NIA 真实的测试任务名（不是想当然的 `testDemoDebug`——那是我一开始猜错、真跑才发现不对的）。
+3. **真实有环境坑**——截图测试在无头环境会失败，这是任何真实跑过的人都会遇到的。
+
+**一个诚实的边界**：我实证的最小闭环是"补一个测试 + 测试变绿"。我**没有**真的让 agent 实现"加收藏角标"那种完整功能（那涉及 Hilt 注入、Repository、状态流，是更大的工程）。所以这篇实证的是"agent 补测试"这条小而稳的路径，而不是"agent 实现大功能"——后者需要你 clone 了项目自己跑，才能知道你的具体任务能不能跑通。**别把示例当成实证，也别说我没告诉你这一点。**
 
 ---
 

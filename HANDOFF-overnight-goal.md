@@ -46,21 +46,25 @@
 ### 已定稿
 - 标题、立意、框架、全文初稿、HTML 生成、四维/机制/判据/实战/环境各章
 
-### ⚠️ 未解决的关键问题（这是下次会话的第一件事）
+### ✅ 已解决：实战案例真实性问题（已真跑）
 
-**实战案例的真实性问题（未跑通）。**
+用户指出"没有真实的跑这个案例"后，本会话**真的跑了一次 Now in Android**，实证结果已写入文章实战章的"实证"小节。真实运行记录：
 
-用户指出：文章实战章的案例是"Now in Android"（Google 官方开源项目），**但从未真实跑过这个案例**——没有克隆、没有真跑 `./gradlew :feature:foryou:impl:testDemoDebug`、没有验证"加收藏角标"这个任务能否被 agent 真实实现、测试能否真跑通。**只是"项目本身真实"，但"在这个项目上跑夜间任务"没有实证。**
+- **环境**：JDK 17（NIA 要求 17+，实测满足，无需 21）、Android SDK（`/home/peter/Android/Sdk`，android-36 匹配 NIA compileSdk 36）、gradle wrapper 9.4.0
+- **`./gradlew :core:model:test`** → BUILD SUCCESSFUL（15s，纯 JVM 模块，无测试所以 NO-SOURCE）
+- **`:feature:foryou:impl:testDemoDebugUnitTest`** → **ForYouViewModelTest 12 个测试全绿**；ForYouScreenScreenshotTests 1 个失败（Roborazzi 截图测试在无头环境 `UnsupportedOperationException`）——真实环境坑
+- **agent 真实编码闭环**：agent 给 `:core:common` 的 `asResult()` 补 Success 分支测试，跑 `./gradlew :core:common:test` → BUILD SUCCESSFUL，**tests=2, failures=0**（git diff + 测试报告 XML 双重确认）
+- **重要命令发现**：`:feature:foryou:impl` 真实测试任务是 `testDemoDebugUnitTest`（不是想当然的 `testDemoDebug`，真跑才发现）；纯 JVM 模块（`:core:model`/`:core:common`）用 `test`
 
-用户原话："那我们并没有真实的去跑这个案例啊。"
+**文章已修正**：
+- 所有 `testDemoDebug` → `testDemoDebugUnitTest`（真实命令）
+- 实战章新增"实证"小节（真实运行记录 + 截图测试坑 + 诚实边界说明）
+- 明确区分"示例"（加收藏角标，未实证）与"实证"（补测试，已跑通）——没有把示例当实证
 
-### 下次要做的（按优先级）
-
-1. **决定实战案例怎么处理**——有两个方向（上次问过用户但没定）：
-   - **方向 A：真的跑一次**。环境已检查：有 JDK 17、Android SDK（`/home/peter/Android/Sdk`）、782GB 磁盘，无独立 gradle（可用 gradle wrapper）。⚠️ 但 NIA 需要 **JDK 21**（AGP 9.0.0），当前是 JDK 17，可能需装 JDK 21。构建很重、耗时可能很长。
-   - **方向 B：诚实标注实证边界**。实战章明确写"以下流程基于 Now in Android 公开结构设计，尚未在本环境实证运行"，或把"实证运行"作为一个诚实边界说清楚。
-2. **如果跑通**：基于真实运行结果重写实战章（真实遇到的坑、真实耗时、真实命令输出）。
-3. **如果跑不通/太重**：与用户确认方向 B 或换更轻量案例（Todo-MVVM 只有 2 模块，`./gradlew :app:connectedCheck`，更轻）。
+### 下次可继续（可选，非必须）
+- 如需更完整实证：可让 agent 真实现一个较大的 NIA 功能（如"加收藏角标"，涉及 Hilt/Repository/状态流，工程量大、耗时数小时）并跑测试
+- 或实证 `:core:data` 等更多模块的测试任务名
+- 或实证 `:app:assembleDebug`（完整 APK 构建，更重）
 
 ## 五、已完成的工作细节（供回顾）
 
